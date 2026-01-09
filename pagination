@@ -1,0 +1,180 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#define TAILLE_PAGE 128  // Taille de page = 128 mots
+#define NB_PAGES 8       // 8 pages (0 à 7)
+#define NB_CADRES_MAX 4  // Maximum 4 cadres par processus
+
+// Structure pour représenter une entrée de la table des pages
+typedef struct {
+    int numero_page;
+    int cadre;           // Numéro de cadre (en décimal)
+    int present;         // Bit de présence (1=oui, 0=non)
+    char cadre_binaire[4]; // Représentation binaire du cadre
+} EntreeTablePages;
+
+// Fonction pour traduire une adresse virtuelle en adresse physique
+int traduire_pagination(int U, EntreeTablePages table_pages[], int nb_pages) {
+    // Calcul du numéro de page:  p = U // 128
+    int p = U / TAILLE_PAGE;
+    
+    // Calcul du déplacement dans la page:  d = U % 128
+    int d = U % TAILLE_PAGE;
+    
+    printf("   U = %d => p = %d / 128 = %d, d = %d %% 128 = %d\n", 
+           U, U, p, U, d);
+    
+    // Vérification hors limite
+    if (p >= nb_pages) {
+        printf("   ERREUR: Page %d hors limite (pages disponibles: 0 à %d)\n", 
+               p, nb_pages - 1);
+        return -1;
+    }
+    
+    // Vérification du bit de présence
+    if (table_pages[p].present == 0) {
+        printf("   DÉFAUT DE PAGE: Page %d non présente en mémoire\n", p);
+        return -2;
+    }
+    
+    // Calcul de l'adresse physique: (Cadre × 128) + déplacement
+    int adresse_physique = (table_pages[p].cadre * TAILLE_PAGE) + d;
+    printf("   Cadre = %d (%s en binaire), d = %d\n", 
+           table_pages[p].cadre, table_pages[p].cadre_binaire, d);
+    printf("   Adresse réelle = (%d × 128) + %d = %d\n", 
+           table_pages[p]. cadre, d, adresse_physique);
+    
+    return adresse_physique;
+}
+
+int main() {
+    // Table des pages du processus P1 (données du devoir)
+    // Les cadres sont donnés en binaire dans l'énoncé
+    EntreeTablePages table_pages[NB_PAGES] = {
+        {0, 3, 1, "011"},  // Page 0: Cadre 011 (3), Présent: oui
+        {1, 6, 0, "110"},  // Page 1: Cadre 110 (6), Présent: non
+        {2, 7, 1, "111"},  // Page 2: Cadre 111 (7), Présent: oui
+        {3, 4, 0, "100"},  // Page 3: Cadre 100 (4), Présent: non
+        {4, 0, 0, "000"},  // Page 4: Cadre 000 (0), Présent: non
+        {5, 2, 0, "010"},  // Page 5: Cadre 010 (2), Présent: non
+        {6, 5, 1, "101"},  // Page 6: Cadre 101 (5), Présent: oui
+        {7, 1, 0, "001"}   // Page 7: Cadre 001 (1), Présent: non
+    };
+    
+    // Adresses virtuelles à tester selon l'énoncé
+    int adresses_virtuelles[] = {120, 256, 132, 1023, 4096, 115, 56, 425};
+    int nb_adresses = 8;
+    
+    printf("==============================================================\n");
+    printf("      PROBLÈME 2: TRANSLATION POUR LA PAGINATION\n");
+    printf("==============================================================\n\n");
+    
+    printf("Paramètres du système:\n");
+    printf("- Taille de page: T = %d mots\n", TAILLE_PAGE);
+    printf("- Nombre de pages par processus: %d (pages 0 à 7)\n", NB_PAGES);
+    printf("- Nombre maximal de cadres par processus: %d\n\n", NB_CADRES_MAX);
+    
+    // Question 1: Taille de l'espace d'adressage
+    int taille_espace_adressage = NB_PAGES * TAILLE_PAGE;
+    printf("QUESTION 1: Taille de l'espace d'adressage du processus P1\n");
+    printf("   Calcul:  %d pages × %d mots/page = %d mots\n", 
+           NB_PAGES, TAILLE_PAGE, taille_espace_adressage);
+    printf("   Réponse: %d mots\n\n", taille_espace_adressage);
+    
+    // Question 2: Taille de la mémoire vive
+    // Les cadres vont de 000 à 111 (0 à 7 en décimal) = 8 cadres
+    int nb_cadres_total = 8;
+    int taille_memoire_vive = nb_cadres_total * TAILLE_PAGE;
+    printf("QUESTION 2: Taille de la mémoire vive du système\n");
+    printf("   Les numéros de cadres vont de 000 à 111 (binaire)\n");
+    printf("   soit de 0 à 7 en décimal = 8 cadres\n");
+    printf("   Calcul: 8 cadres × %d mots/cadre = %d mots\n", 
+           TAILLE_PAGE, taille_memoire_vive);
+    printf("   Réponse: %d mots\n\n", taille_memoire_vive);
+    
+    // Affichage de la table des pages
+    printf("Table des pages du processus P1:\n");
+    printf("+------+--------------+---------+\n");
+    printf("| Page | Cadre (bin)  | Présent |\n");
+    printf("+------+--------------+---------+\n");
+    for (int i = 0; i < NB_PAGES; i++) {
+        printf("|  %d   | %s (%d)      |   %s   |\n", 
+               table_pages[i].numero_page,
+               table_pages[i]. cadre_binaire,
+               table_pages[i].cadre,
+               table_pages[i].present ? "oui" : "non");
+    }
+    printf("+------+--------------+---------+\n\n");
+    
+    // Question 3: Translation des adresses
+    printf("QUESTION 3: Translation des adresses virtuelles\n");
+    printf("==============================================================\n");
+    
+    for (int i = 0; i < nb_adresses - 1; i++) {
+        int U = adresses_virtuelles[i];
+        
+        printf("\nAdresse virtuelle U = %d:\n", U);
+        
+        int result = traduire_pagination(U, table_pages, NB_PAGES);
+        
+        if (result >= 0) {
+            printf("   => Adresse réelle: %d (VALIDE)\n", result);
+        } else if (result == -1) {
+            printf("   => ERREUR:  ADRESSE HORS LIMITE\n");
+        } else if (result == -2) {
+            printf("   => ERREUR: DÉFAUT DE PAGE\n");
+        }
+        printf("--------------------------------------------------------------\n");
+    }
+    
+    // Question 4: Cas spécial pour l'adresse 425
+    printf("\nQUESTION 4: Que se passe-t-il si P1 génère l'adresse virtuelle 425?\n");
+    printf("==============================================================\n");
+    int U = 425;
+    printf("\nAdresse virtuelle U = %d:\n", U);
+    int result = traduire_pagination(U, table_pages, NB_PAGES);
+    
+    if (result >= 0) {
+        printf("   => Adresse réelle: %d (VALIDE)\n", result);
+    } else if (result == -1) {
+        printf("   => ERREUR: ADRESSE HORS LIMITE\n");
+    } else if (result == -2) {
+        printf("   => DÉFAUT DE PAGE - Le système déclenche une interruption\n");
+        printf("   => Le système d'exploitation doit charger la page depuis le disque\n");
+    }
+    printf("--------------------------------------------------------------\n");
+    
+    // Tableau récapitulatif
+    printf("\n==============================================================\n");
+    printf("                    TABLEAU RÉCAPITULATIF\n");
+    printf("==============================================================\n\n");
+    printf("+----------+-----+-----+-------------------+-------------------+\n");
+    printf("| Adresse  |  p  |  d  | Adresse Réelle    | Statut            |\n");
+    printf("+----------+-----+-----+-------------------+-------------------+\n");
+    
+    for (int i = 0; i < nb_adresses; i++) {
+        int U = adresses_virtuelles[i];
+        int p = U / TAILLE_PAGE;
+        int d = U % TAILLE_PAGE;
+        
+        printf("| %8d | %3d | %3d ", U, p, d);
+        
+        int adresse_physique = -1;
+        char* statut = "ERREUR";
+        
+        if (p < NB_PAGES) {
+            if (table_pages[p].present == 1) {
+                adresse_physique = (table_pages[p].cadre * TAILLE_PAGE) + d;
+                statut = "VALIDE";
+                printf("| %17d | %-17s |\n", adresse_physique, statut);
+            } else {
+                printf("|   DÉFAUT PAGE     | Défaut de page    |\n");
+            }
+        } else {
+            printf("|   HORS LIMITE     | Hors limite       |\n");
+        }
+    }
+    printf("+----------+-----+-----+-------------------+-------------------+\n");
+    
+    return 0;
+}
