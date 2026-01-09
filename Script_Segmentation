@@ -1,0 +1,142 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+// Structure pour représenter un segment
+typedef struct {
+    int numero;
+    int base;
+    int limite;
+} Segment;
+
+// Fonction pour traduire une adresse virtuelle en adresse physique
+int traduire_segmentation(int s, int d, Segment segments[], int nb_segments) {
+    // Vérifier si le numéro de segment est valide
+    if (s < 0 || s >= nb_segments) {
+        printf("   ERREUR:  Numéro de segment invalide (s=%d)\n", s);
+        return -1;
+    }
+    
+    // Vérifier si le déplacement est dans les limites
+    if (d >= segments[s].limite) {
+        printf("   ERREUR D'ADRESSAGE: d=%d >= Limite=%d\n", d, segments[s].limite);
+        return -1;
+    }
+    
+    if (d < 0) {
+        printf("   ERREUR:  Déplacement négatif (d=%d)\n", d);
+        return -1;
+    }
+    
+    // Calcul de l'adresse physique:  Adresse réelle = Base + déplacement
+    int adresse_physique = segments[s].base + d;
+    printf("   Calcul:  Base(%d) + d(%d) = %d\n", segments[s].base, d, adresse_physique);
+    
+    return adresse_physique;
+}
+
+int main() {
+    // Table des segments du processus P1 (données du devoir)
+    Segment segments[5] = {
+        {0, 1536, 512},   // Segment 0: Base=1536, Limite=512
+        {1, 464,  76},    // Segment 1: Base=464, Limite=76
+        {2, 148,  203},   // Segment 2: Base=148, Limite=203
+        {3, 415,  359},   // Segment 3: Base=415, Limite=359
+        {4, 1190, 192}    // Segment 4: Base=1190, Limite=192
+    };
+    
+    int nb_segments = 5;
+    
+    // Tableau des adresses virtuelles à tester (format: s, d)
+    typedef struct {
+        int s;
+        int d;
+    } AdresseVirtuelle;
+    
+    AdresseVirtuelle adresses[] = {
+        {0, 248},    // (0:248)
+        {0, 510},    // (0:510)
+        {0, 2256},   // (0:2256)
+        {1, 54},     // (1:54)
+        {1, 60},     // (1:60)
+        {2, 125},    // (2:125)
+        {2, 340},    // (2:340)
+        {3, 264},    // (3:264)
+        {3, 125},    // (3:125)
+        {4, 64},     // (4:64)
+        {4, 82},     // (4:82)
+        {4, 430}     // (4:430) - question additionnelle
+    };
+    
+    int nb_adresses = 12;
+    
+    printf("========================================================\n");
+    printf("   PROBLÈME 1: TRANSLATION POUR LA SEGMENTATION\n");
+    printf("========================================================\n\n");
+    
+    // Affichage du tableau des segments
+    printf("Table des segments du processus P1:\n");
+    printf("+----------+-------+---------+\n");
+    printf("| Segment  | Base  | Limite  |\n");
+    printf("+----------+-------+---------+\n");
+    for (int i = 0; i < nb_segments; i++) {
+        printf("|    %d     | %5d |   %3d   |\n", 
+               segments[i].numero, segments[i].base, segments[i].limite);
+    }
+    printf("+----------+-------+---------+\n\n");
+    
+    // Translation des adresses
+    printf("Translation des adresses virtuelles:\n");
+    printf("+==========================================================+\n");
+    
+    for (int i = 0; i < nb_adresses; i++) {
+        int s = adresses[i].s;
+        int d = adresses[i].d;
+        
+        printf("\nAdresse virtuelle (%d:%d):\n", s, d);
+        
+        int adresse_physique = traduire_segmentation(s, d, segments, nb_segments);
+        
+        if (adresse_physique >= 0) {
+            printf("   => Adresse réelle: %d (VALIDE)\n", adresse_physique);
+        } else {
+            printf("   => ADRESSE INVALIDE (ERREUR D'ADRESSAGE)\n");
+        }
+        printf("----------------------------------------------------------\n");
+    }
+    
+    printf("\n========================================================\n");
+    printf("                    RÉSUMÉ FINAL\n");
+    printf("========================================================\n\n");
+    
+    // Tableau récapitulatif
+    printf("+--------+------+----------+-------------------+--------------+\n");
+    printf("| Adresse| Seg  | Déplac.   | Adresse Réelle    | Statut       |\n");
+    printf("+--------+------+----------+-------------------+--------------+\n");
+    
+    for (int i = 0; i < nb_adresses; i++) {
+        int s = adresses[i].s;
+        int d = adresses[i].d;
+        
+        printf("| (%d:%d)", s, d);
+        if (d < 1000) printf(" ");
+        if (d < 100) printf(" ");
+        if (d < 10) printf(" ");
+        
+        printf(" |  %d   | %8d ", s, d);
+        
+        // Recalcul silencieux pour le tableau
+        int adresse_physique = -1;
+        if (s >= 0 && s < nb_segments && d >= 0 && d < segments[s].limite) {
+            adresse_physique = segments[s].base + d;
+        }
+        
+        if (adresse_physique >= 0) {
+            printf(" | %17d | VALIDE       |\n", adresse_physique);
+        } else {
+            printf(" |      ERREUR       | INVALIDE     |\n");
+        }
+    }
+    printf("+--------+------+----------+-------------------+--------------+\n");
+    
+    return 0;
+}
