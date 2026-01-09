@@ -15,32 +15,22 @@ echo "=== COMPILATION DES SCRIPTS ==="
 echo ""
 
 # Compilation du script de segmentation
-echo "[1/3] Compilation de segmentation. c..."
+echo "[1/2] Compilation de segmentation. c..."
 gcc -o segmentation segmentation.c -Wall -Wextra
 if [ $? -eq 0 ]; then
     echo "      ✓ segmentation.c compilé avec succès"
 else
-    echo "      ✗ Erreur de compilation de segmentation. c"
+    echo "      ✗ Erreur de compilation de segmentation.c"
     exit 1
 fi
 
 # Compilation du script de pagination
-echo "[2/3] Compilation de pagination.c..."
+echo "[2/2] Compilation de pagination. c..."
 gcc -o pagination pagination.c -Wall -Wextra
 if [ $? -eq 0 ]; then
     echo "      ✓ pagination.c compilé avec succès"
 else
-    echo "      ✗ Erreur de compilation de pagination. c"
-    exit 1
-fi
-
-# Compilation du script d'observation
-echo "[3/3] Compilation de observation_memoire.c..."
-gcc -o observation_memoire observation_memoire.c -Wall -Wextra
-if [ $? -eq 0 ]; then
-    echo "      ✓ observation_memoire.c compilé avec succès"
-else
-    echo "      ✗ Erreur de compilation de observation_memoire.c"
+    echo "      ✗ Erreur de compilation de pagination.c"
     exit 1
 fi
 
@@ -67,16 +57,6 @@ echo ""
 echo ">>> PROBLÈME 2: PAGINATION <<<"
 echo ""
 ./pagination
-echo ""
-echo "Appuyez sur Entrée pour continuer..."
-read
-
-echo ""
-echo "=============================================================="
-echo ""
-echo ">>> OBSERVATION DE LA MÉMOIRE RÉELLE <<<"
-echo ""
-./observation_memoire
 echo ""
 
 echo "=============================================================="
