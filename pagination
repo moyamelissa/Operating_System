@@ -15,7 +15,7 @@ typedef struct {
 
 // Fonction pour traduire une adresse virtuelle en adresse physique
 int traduire_pagination(int U, EntreeTablePages table_pages[], int nb_pages) {
-    // Calcul du numéro de page:  p = U // 128
+    // Calcul du numéro de page:   p = U // 128
     int p = U / TAILLE_PAGE;
     
     // Calcul du déplacement dans la page:  d = U % 128
@@ -37,7 +37,7 @@ int traduire_pagination(int U, EntreeTablePages table_pages[], int nb_pages) {
         return -2;
     }
     
-    // Calcul de l'adresse physique: (Cadre × 128) + déplacement
+    // Calcul de l'adresse physique:  (Cadre × 128) + déplacement
     int adresse_physique = (table_pages[p].cadre * TAILLE_PAGE) + d;
     printf("   Cadre = %d (%s en binaire), d = %d\n", 
            table_pages[p].cadre, table_pages[p].cadre_binaire, d);
@@ -51,7 +51,7 @@ int main() {
     // Table des pages du processus P1 (données du devoir)
     // Les cadres sont donnés en binaire dans l'énoncé
     EntreeTablePages table_pages[NB_PAGES] = {
-        {0, 3, 1, "011"},  // Page 0: Cadre 011 (3), Présent: oui
+        {0, 3, 1, "011"},  // Page 0: Cadre 011 (3), Présent:  oui
         {1, 6, 0, "110"},  // Page 1: Cadre 110 (6), Présent: non
         {2, 7, 1, "111"},  // Page 2: Cadre 111 (7), Présent: oui
         {3, 4, 0, "100"},  // Page 3: Cadre 100 (4), Présent: non
@@ -72,12 +72,12 @@ int main() {
     printf("Paramètres du système:\n");
     printf("- Taille de page: T = %d mots\n", TAILLE_PAGE);
     printf("- Nombre de pages par processus: %d (pages 0 à 7)\n", NB_PAGES);
-    printf("- Nombre maximal de cadres par processus: %d\n\n", NB_CADRES_MAX);
+    printf("- Nombre maximal de cadres par processus:  %d\n\n", NB_CADRES_MAX);
     
     // Question 1: Taille de l'espace d'adressage
     int taille_espace_adressage = NB_PAGES * TAILLE_PAGE;
     printf("QUESTION 1: Taille de l'espace d'adressage du processus P1\n");
-    printf("   Calcul:  %d pages × %d mots/page = %d mots\n", 
+    printf("   Calcul: %d pages × %d mots/page = %d mots\n", 
            NB_PAGES, TAILLE_PAGE, taille_espace_adressage);
     printf("   Réponse: %d mots\n\n", taille_espace_adressage);
     
@@ -102,7 +102,7 @@ int main() {
                table_pages[i].numero_page,
                table_pages[i]. cadre_binaire,
                table_pages[i].cadre,
-               table_pages[i].present ? "oui" : "non");
+               table_pages[i].present ?  "oui" : "non");
     }
     printf("+------+--------------+---------+\n\n");
     
@@ -118,7 +118,7 @@ int main() {
         int result = traduire_pagination(U, table_pages, NB_PAGES);
         
         if (result >= 0) {
-            printf("   => Adresse réelle: %d (VALIDE)\n", result);
+            printf("   => Adresse réelle:  %d (VALIDE)\n", result);
         } else if (result == -1) {
             printf("   => ERREUR:  ADRESSE HORS LIMITE\n");
         } else if (result == -2) {
@@ -144,13 +144,14 @@ int main() {
     }
     printf("--------------------------------------------------------------\n");
     
-    // Tableau récapitulatif
+    // Tableau récapitulatif avec le format demandé
     printf("\n==============================================================\n");
     printf("                    TABLEAU RÉCAPITULATIF\n");
     printf("==============================================================\n\n");
-    printf("+----------+-----+-----+-------------------+-------------------+\n");
-    printf("| Adresse  |  p  |  d  | Adresse Réelle    | Statut            |\n");
-    printf("+----------+-----+-----+-------------------+-------------------+\n");
+    printf("+----------+-----+-----+-----------+--------+-------------------------+\n");
+    printf("| Adresse  |  p  |  d  | Présence  | Cadre  | Adresse physique/Erreur |\n");
+    printf("| virtuelle|     |     |           |        |                         |\n");
+    printf("+----------+-----+-----+-----------+--------+-------------------------+\n");
     
     for (int i = 0; i < nb_adresses; i++) {
         int U = adresses_virtuelles[i];
@@ -159,22 +160,22 @@ int main() {
         
         printf("| %8d | %3d | %3d ", U, p, d);
         
-        int adresse_physique = -1;
-        char* statut = "ERREUR";
-        
-        if (p < NB_PAGES) {
-            if (table_pages[p].present == 1) {
-                adresse_physique = (table_pages[p].cadre * TAILLE_PAGE) + d;
-                statut = "VALIDE";
-                printf("| %17d | %-17s |\n", adresse_physique, statut);
-            } else {
-                printf("|   DÉFAUT PAGE     | Défaut de page    |\n");
-            }
-        } else {
-            printf("|   HORS LIMITE     | Hors limite       |\n");
+        // Vérifier si hors limite
+        if (p >= NB_PAGES) {
+            printf("| — (hors   |   —    | Erreur (hors limite)    |\n");
+            printf("|          |     |     | logique)  |        |                         |\n");
+        } 
+        // Vérifier la présence
+        else if (table_pages[p]. present == 0) {
+            printf("|    Non    |   —    | Erreur (défaut de page) |\n");
+        }
+        // Page présente
+        else {
+            int adresse_physique = (table_pages[p].cadre * TAILLE_PAGE) + d;
+            printf("|    Oui    |   %d    | %23d |\n", table_pages[p].cadre, adresse_physique);
         }
     }
-    printf("+----------+-----+-----+-------------------+-------------------+\n");
+    printf("+----------+-----+-----+-----------+--------+-------------------------+\n");
     
     return 0;
 }
