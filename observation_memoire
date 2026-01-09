@@ -1,0 +1,114 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+// Variable globale initialisée (segment DATA)
+int variable_globale = 42;
+
+// Variable globale non-initialisée (segment BSS)
+int variable_globale_non_init;
+
+int main() {
+    // Variable locale (segment STACK)
+    int variable_locale = 100;
+    
+    // Variable allouée dynamiquement (segment HEAP)
+    int *pointeur_heap = (int*)malloc(sizeof(int));
+    if (pointeur_heap == NULL) {
+        printf("ERREUR: Allocation mémoire échouée\n");
+        return 1;
+    }
+    *pointeur_heap = 200;
+    
+    // Variable statique (segment DATA)
+    static int variable_statique = 300;
+    
+    printf("==============================================================\n");
+    printf("     SCRIPT D'OBSERVATION RÉELLE DE LA MÉMOIRE SOUS LINUX\n");
+    printf("==============================================================\n\n");
+    
+    // Affichage du PID du processus
+    pid_t pid = getpid();
+    printf("PID du processus: %d\n\n", pid);
+    
+    // Affichage des adresses mémoires
+    printf("ADRESSES MÉMOIRES DES VARIABLES:\n");
+    printf("--------------------------------------------------------------\n");
+    printf("Variable globale initialisée (DATA)    : %p\n", (void*)&variable_globale);
+    printf("Variable globale non-init (BSS)        : %p\n", (void*)&variable_globale_non_init);
+    printf("Variable statique (DATA)               : %p\n", (void*)&variable_statique);
+    printf("Variable locale (STACK)                : %p\n", (void*)&variable_locale);
+    printf("Pointeur heap (variable sur HEAP)      : %p\n", (void*)pointeur_heap);
+    printf("Adresse de la fonction main (TEXT)     : %p\n", (void*)main);
+    printf("--------------------------------------------------------------\n\n");
+    
+    // Analyse des segments
+    printf("ANALYSE DES SEGMENTS:\n");
+    printf("--------------------------------------------------------------\n");
+    
+    unsigned long addr_text = (unsigned long)main;
+    unsigned long addr_data = (unsigned long)&variable_globale;
+    unsigned long addr_bss = (unsigned long)&variable_globale_non_init;
+    unsigned long addr_heap = (unsigned long)pointeur_heap;
+    unsigned long addr_stack = (unsigned long)&variable_locale;
+    
+    printf("Segment TEXT (code exécutable) : 0x%lx\n", addr_text);
+    printf("Segment DATA (données init.)   : 0x%lx\n", addr_data);
+    printf("Segment BSS (données non-init. ): 0x%lx\n", addr_bss);
+    printf("Segment HEAP (allocation dyn.) : 0x%lx\n", addr_heap);
+    printf("Segment STACK (variables loc.) : 0x%lx\n", addr_stack);
+    printf("--------------------------------------------------------------\n\n");
+    
+    // Observation:  ordre typique en mémoire
+    printf("ORDRE EN MÉMOIRE (adresses croissantes):\n");
+    printf("TEXT < DATA < BSS < HEAP ...   (↑ croissant) ...   STACK\n\n");
+    
+    printf("OBSERVATIONS:\n");
+    printf("- Le code (TEXT) a l'adresse la plus basse\n");
+    printf("- Les données globales (DATA/BSS) suivent\n");
+    printf("- Le HEAP croît vers les adresses hautes (malloc)\n");
+    printf("- Le STACK croît vers les adresses basses (dans l'espace haut)\n");
+    printf("- L'espace entre HEAP et STACK est libre pour expansion\n\n");
+    
+    // Affichage de la cartographie mémoire réelle du processus
+    printf("==============================================================\n");
+    printf("   CARTOGRAPHIE MÉMOIRE DU PROCESSUS (via /proc/%d/maps)\n", pid);
+    printf("==============================================================\n\n");
+    
+    char command[256];
+    sprintf(command, "cat /proc/%d/maps", pid);
+    
+    // Exécution de la commande système
+    int ret = system(command);
+    
+    if (ret != 0) {
+        printf("\nERReur:  Impossible de lire /proc/%d/maps\n", pid);
+        printf("Assurez-vous d'exécuter ce programme sur Linux.\n");
+    }
+    
+    printf("\n==============================================================\n");
+    printf("LÉGENDE DES PERMISSIONS (dans /proc/pid/maps):\n");
+    printf("--------------------------------------------------------------\n");
+    printf("r = read (lecture)\n");
+    printf("w = write (écriture)\n");
+    printf("x = execute (exécution)\n");
+    printf("p = private (privé - copie locale au processus)\n");
+    printf("s = shared (partagé entre processus)\n");
+    printf("==============================================================\n\n");
+    
+    printf("INTERPRÉTATION:\n");
+    printf("- Les segments r-xp sont généralement le code (TEXT)\n");
+    printf("- Les segments rw-p sont les données (DATA, BSS, HEAP, STACK)\n");
+    printf("- [heap] indique le segment HEAP\n");
+    printf("- [stack] indique le segment STACK\n");
+    printf("- Les bibliothèques partagées (. so) sont aussi mappées\n\n");
+    
+    // Libération de la mémoire
+    free(pointeur_heap);
+    
+    printf("==============================================================\n");
+    printf("                    FIN DE L'OBSERVATION\n");
+    printf("==============================================================\n");
+    
+    return 0;
+}
